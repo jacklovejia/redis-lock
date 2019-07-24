@@ -20,15 +20,6 @@ public class RedisLock implements Lock {
     private String top; // 发布订阅的主题
     private long timeOut; // 设置超时时间(秒)
 
-    @Override
-    public String toString() {
-        return "RedisLock{" +
-                "stringRedisTemplate=" + stringRedisTemplate +
-                ", sourceName='" + sourceName + '\'' +
-                ", top='" + top + '\'' +
-                ", timeOut=" + timeOut +
-                '}';
-    }
 
     public RedisLock(StringRedisTemplate stringRedisTemplate, String sourceName, String top, long timeOut) {
         this.stringRedisTemplate = stringRedisTemplate;
@@ -52,10 +43,11 @@ public class RedisLock implements Lock {
                         try {
                             CountDownLatch coun = new CountDownLatch(1);
                             redisConnection.subscribe((message, bytes) -> {
-                                // 收到通知后执行的
+                                // 收到通知后执行的. !!! 这里面是收到通知后才执行的
                                 a = System.currentTimeMillis();
                                 coun.countDown();
                             }, top.getBytes());
+                            // 因为subcribe 会返回结果, 不能让其继续向下执行接着while循环, 所有 await 阻塞在这里
                             coun.await(timeOut, TimeUnit.SECONDS);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -74,10 +66,8 @@ public class RedisLock implements Lock {
     @Override
     public boolean tryLock() {
         Boolean aBoolean = stringRedisTemplate.execute((RedisCallback<Boolean>) redisConnection -> {
-            System.out.println(Thread.currentThread().getName()+"进入tryLock"+redisConnection);
             String value = "lock";
             Boolean set = redisConnection.set(sourceName.getBytes(), value.getBytes(), Expiration.seconds(timeOut), RedisStringCommands.SetOption.SET_IF_ABSENT);
-            System.out.println(Thread.currentThread().getName()+"try获取锁:"+set);
             return set;
         });
         return aBoolean;
