@@ -66,6 +66,7 @@ public class RedisLock implements Lock {
     @Override
     public boolean tryLock() {
         Boolean aBoolean = stringRedisTemplate.execute((RedisCallback<Boolean>) redisConnection -> {
+            // 优化成加锁的是使用某种规则生成一个随机数, 例如UUID 作为value值
             String value = "lock";
             Boolean set = redisConnection.set(sourceName.getBytes(), value.getBytes(), Expiration.seconds(timeOut), RedisStringCommands.SetOption.SET_IF_ABSENT);
             return set;
@@ -75,6 +76,7 @@ public class RedisLock implements Lock {
 
     @Override
     public void unlock() {
+        // 先检查一下还是不是value的值是不是自己锁的,
         stringRedisTemplate.delete(sourceName);
         stringRedisTemplate.execute(new RedisCallback<Long>() {
             // 发布释放锁的消息
