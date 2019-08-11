@@ -35,9 +35,9 @@ public class RedisLockApplicationTests {
         final int threadNum = 2;
         CountDownLatch c = new CountDownLatch(threadNum);
         CountDownLatch c2 = new CountDownLatch(1);
-        Thread[] threads = new Thread[threadNum];
+//        Thread[] threads = new Thread[threadNum];
         System.out.println("创建线程");
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < 200; i++) {
             Thread thread = new Thread(() -> {
                 try {
                     c.await();
@@ -47,7 +47,7 @@ public class RedisLockApplicationTests {
                 }
             });
 
-            threads[i] = thread;
+//            threads[i] = thread;
             thread.start();
             c.countDown();
         }
